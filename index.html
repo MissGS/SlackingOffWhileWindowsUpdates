@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Working on updates</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background-color: black;
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: none;
+        }
+
+        body:hover {
+            cursor: none;
+        }
+
+        body:active {
+            cursor: none;
+        }
+
+        .poem {
+            font-size: 16px;
+            margin: 20px 0;
+            font-style: italic;
+            opacity: 0;
+        }
+
+        .screen {
+            text-align: center;
+            transform: translateY(18px);
+        }
+
+        /* ===== 你的 loading 动画（仅改颜色） ===== */
+        .loading {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 42px;
+            animation: satellite 3s infinite linear;
+            border: 1px solid #fff;
+            border-radius: 100%;
+        }
+
+        .loading:before,
+        .loading:after {
+            position: absolute;
+            left: 1px;
+            top: 1px;
+            width: 12px;
+            height: 12px;
+            content: "";
+            border-radius: 100%;
+            background-color: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        .loading:after {
+            right: 0;
+            width: 20px;
+            height: 20px;
+            margin: 13px;
+        }
+
+        @keyframes satellite {
+            from {
+                transform: rotate(0) translateZ(0);
+            }
+
+            to {
+                transform: rotate(360deg) translateZ(0);
+            }
+        }
+
+        .text {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        .bottom {
+            margin-top: 20px;
+            font-size: 18px;
+            opacity: 0.95;
+        }
+
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            opacity: 0;
+            z-index: 9999;
+            pointer-events: none;
+            transition: opacity 1s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="transition-overlay" id="transitionOverlay"></div>
+
+    <div class="screen">
+        <!-- 加载动画 -->
+        <div class="loading"></div>
+
+        <div class="text">
+            Working on updates&nbsp;&nbsp;<span id="percent">1</span>% 完成。
+        </div>
+        <div class="text">
+            请不要关闭您的计算机
+        </div>
+
+        <div class="poem" id="poem">
+            好久不见，甚是想念
+        </div>
+
+        <div class="bottom">
+            您的电脑将重启几次
+        </div>
+    </div>
+
+    <script>
+        let percent = 1;
+        const el = document.getElementById("percent");
+        const poemEl = document.getElementById("poem");
+
+        // 诗句和问候语列表
+        const poems = [
+            "海内存知己 天涯若比邻",
+            "长风破浪会有时 直挂云帆济沧海",
+            "会当凌绝顶 一览众山小",
+            "大漠孤烟直 长河落日圆",
+            "行到水穷处 坐看云起时",
+            "人生自古谁无死 留取丹心照汗青",
+            "天生我材必有用 千金散尽还复来",
+            "江山代有才人出 各领风骚数百年",
+            "山重水复疑无路 柳暗花明又一村",
+            "读书破万卷 下笔如有神",
+            "落霞与孤鹜齐飞 秋水共长天一色",
+            "不畏浮云遮望眼 自缘身在最高层",
+            "春风得意马蹄疾 一日看尽长安花",
+            "纸上得来终觉浅 绝知此事要躬行",
+            "但愿人长久 千里共婵娟",
+            "人生若只如初见 何事秋风悲画扇",
+            "千山鸟飞绝 万径人踪灭",
+            "采菊东篱下 悠然见南山",
+            "孤帆远影碧空尽 唯见长江天际流",
+            "浮云游子意 落日故人情",
+            "明月松间照 清泉石上流",
+            "少壮不努力 老大徒伤悲",
+            "问君能有几多愁 恰似一江春水向东流",
+            "山高月小 水落石出",
+            "欲穷千里目 更上一层楼",
+            "路漫漫其修远兮 吾将上下而求索",
+            "人生如逆旅 我亦是行人",
+            "桃李不言 下自成蹊",
+            "宁可枝头抱香死 何曾吹落北风中",
+            "曾经沧海难为水 除却巫山不是云",
+            "天地有正气 杂然赋流形",
+            "疾风知劲草 板荡识诚臣",
+            "满招损 谦受益",
+            "星垂平野阔 月涌大江流",
+            "山随平野尽 江入大荒流",
+            "千淘万漉虽辛苦 吹尽狂沙始到金",
+            "行稳致远 进而有为",
+            "不经一番寒彻骨 怎得梅花扑鼻香",
+            "临渊羡鱼 不如退而结网",
+            "志不强者智不达 言不信者行不果",
+            "一寸光阴一寸金 寸金难买寸光阴",
+            "春蚕到死丝方尽 蜡炬成灰泪始干",
+            "青山遮不住 毕竟东流去",
+            "云无心以出岫 鸟倦飞而知还",
+            "大鹏一日同风起 扶摇直上九万里",
+            "千里之行 始于足下",
+            "穷且益坚 不坠青云之志",
+            "海阔凭鱼跃 天高任鸟飞",
+            "功不唐捐 玉汝于成",
+            "万事开头难 行稳方致远",
+            "日拱一卒 功不唐捐",
+            "心有山海 静而不争",
+            "念念不忘 必有回响",
+            "以梦为马 不负韶华",
+            "前路浩荡 万事可期",
+            "山河远阔 人间星河",
+            "长路虽远 行则将至",
+            "行而不辍 未来可期",
+            "厚积薄发 行稳致远",
+            "风雨同舟 共赴山海",
+            "岁月不居 时节如流",
+            "大道至简 实干为要",
+            "知不足而奋进 望远山而前行",
+            "心之所向 素履以往",
+            "不驰于空想 不骛于虚声",
+            "志之所趋 无远弗届",
+            "见山是山 见水是水",
+            "道阻且长 行则将至",
+            "静水流深 沧笙踏歌",
+            "心有所信 方能行远",
+            "以终为始 行稳致新",
+            "积跬步以至千里 积小流以成江海",
+            "向光而行 与时偕进",
+            "初心如磐 行稳致远",
+            "山海有归期 风雨不误行",
+            "守正创新 行稳致新",
+            "时序更替 华章日新",
+            "笃行不怠 未来可期",
+            "仰望星空 脚踏实地",
+            "同心致远 聚力前行",
+            "日新月异 行稳致远",
+            "不负时代 不负热爱",
+            "步履不停 未来可期",
+            "心有所向 行必能至",
+            "志在千里 行稳致远"
+        ];
+
+        // 诗句淡入淡出效果
+        let poemTempI = 0;
+        let poemSto;
+
+        // 诗句淡出
+        function fadeOutPoem() {
+            poemTempI = poemTempI - 1;
+            poemEl.style.opacity = (poemTempI / 100);
+            if (poemTempI <= 0) {
+                poemTempI = 0;
+                clearTimeout(poemSto);
+                // 更换诗句
+                const randomIndex = Math.floor(Math.random() * poems.length);
+                poemEl.textContent = poems[randomIndex];
+                // 开始淡入
+                fadeInPoem();
+                return;
+            }
+            poemSto = setTimeout(fadeOutPoem, 12);
+        }
+
+        // 诗句淡入
+        function fadeInPoem() {
+            poemTempI = poemTempI + 1;
+            poemEl.style.opacity = (poemTempI / 100);
+            if (poemTempI >= 90) {
+                poemTempI = 90;
+                clearTimeout(poemSto);
+                return;
+            }
+            poemSto = setTimeout(fadeInPoem, 12);
+        }
+
+        // 随机显示一句诗
+        function showRandomPoem() {
+            // 先淡出
+            poemTempI = 90;
+            fadeOutPoem();
+        }
+
+        // 每5秒更换一次诗句
+        setInterval(showRandomPoem, 5000);
+
+        function next() {
+            if (percent >= 100) {
+                // 当进度达到100%时，显示过渡层，然后跳转到win11动画页面
+                const transitionOverlay = document.getElementById('transitionOverlay');
+                transitionOverlay.style.opacity = '1';
+                transitionOverlay.style.pointerEvents = 'auto';
+
+                setTimeout(() => {
+                    window.location.href = 'win11-animation-only.html';
+                }, 1000);
+                return;
+            }
+
+            // 随机延迟：多久加 1%，模拟真实安装过程中的随机事件
+            const delay = Math.random() * 3000 + 500;
+
+            setTimeout(() => {
+                percent++;
+                el.textContent = percent;
+
+                next();
+            }, delay);
+        }
+
+        // 禁用鼠标右键
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        });
+
+        // 初始显示一句诗（直接淡入，不需要淡出）
+        function initPoem() {
+            const randomIndex = Math.floor(Math.random() * poems.length);
+            poemEl.textContent = poems[randomIndex];
+            poemTempI = 0;
+            fadeInPoem();
+        }
+
+        initPoem();
+        next();
+    </script>
+
+</body>
+
+</html>
