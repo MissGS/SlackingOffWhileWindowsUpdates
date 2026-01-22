@@ -1,0 +1,2 @@
+# SlackingOffWhileWindowsUpdates
+让你想偷懒的时候领导或者老师无话可说
